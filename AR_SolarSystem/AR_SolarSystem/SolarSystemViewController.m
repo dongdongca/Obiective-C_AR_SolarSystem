@@ -87,13 +87,28 @@ The sun
     //夜光图：背光面
     _earthNode.geometry.firstMaterial.emission.contents = @"art.scnassets/earth/earth-emissive.jpg";
     _earthNode.geometry.firstMaterial.specular.contents = @"art.scnassets/earth/earth-emissive.jpg";
+    //设置地球的位置
+    _earthNode.position = SCNVector3Make(3, 0, 0);
+    
+    //设置月球
+    _moonthNode.geometry.firstMaterial.diffuse.contents = @"art.scnassets/earth/moon.jpg";
+    _moonthNode.position = SCNVector3Make(3, 0, 0);
+    
+
     
     
     //太陽照到地球上的光層，還有反光度，地球的反光度
-    
+    _earthNode.geometry.firstMaterial.shininess = 0.1;//光泽
+    _earthNode.geometry.firstMaterial.specular.intensity = 0.5;//反光率
+    //设置月球反光的颜色
+    _moonthNode.geometry.firstMaterial.specular.contents = [UIColor whiteColor];
     
     //设置太阳的位置
     [_sunNode setPosition:SCNVector3Make(0, 5, -20)];
+    //把地球节点放到地月节点上
+    [_earthAndMoonthNode addChildNode:_earthNode];
+    //设置地月节点的位置
+    _earthAndMoonthNode.position = SCNVector3Make(10, 0, 0);
     
     //给scnView添加根节点
     [self.arScenView.scene.rootNode addChildNode:_sunNode];
@@ -101,7 +116,63 @@ The sun
     //添加太阳自转动画
     [self addAnimationToSun];
     
+    //添加地球动画
+    [self setEarthAnimation];
+    
+    SCNNode *orbitalNode = [SCNNode node];
+    orbitalNode.geometry = [SCNPlane planeWithWidth:30 height:30];
+    orbitalNode.position = SCNVector3Make(0, 5, -20);
+    orbitalNode.geometry.firstMaterial.diffuse.contents = @"art.scnassets/earth/orbit.png";
+    orbitalNode.eulerAngles = SCNVector3Make(20, -5, 0);
+    [_sunNode addChildNode:orbitalNode];
+    
 }
+
+- (void)setEarthAnimation {
+    //创建地球自转
+    [_earthNode runAction: [SCNAction repeatActionForever:[SCNAction rotateByX:0 y:2 z:0 duration:1]]];
+    
+    //地球绕着太阳的动画
+    //创建地球围绕太阳的节点
+    SCNNode *earthRevolutionNode = [SCNNode node];
+    [_sunNode addChildNode:earthRevolutionNode];
+    [earthRevolutionNode addChildNode:_earthAndMoonthNode];
+    
+    
+    //添加地球公转的动画
+    CABasicAnimation *earthRevolutionAnimation = [CABasicAnimation animationWithKeyPath:@"rotation"];
+    //动画时间
+    earthRevolutionAnimation.duration = 10.0;
+    earthRevolutionAnimation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI * 2)];
+    earthRevolutionAnimation.repeatCount = FLT_MAX;
+    [earthRevolutionNode addAnimation:earthRevolutionAnimation forKey:@"earth rotation around sun"];
+    
+    //设置月球公转
+    //创建月球公转的节点
+    SCNNode *moomRotationNode = [SCNNode node];
+    //将月球节点添加到月球公转的节点
+    [moomRotationNode addChildNode:_moonthNode];
+    
+    //月球自转的动画moomRotationAnimation
+    CABasicAnimation *moomRevolutionAnimation = [CABasicAnimation animationWithKeyPath:@"rotation"];
+    //动画时间
+    moomRevolutionAnimation.duration = 5.0;
+    moomRevolutionAnimation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI * 2)];
+    moomRevolutionAnimation.repeatCount = FLT_MAX;
+    [_moonthNode addAnimation:moomRevolutionAnimation forKey:@"moom rotat"];
+    
+    //月球公转的动画
+    CABasicAnimation *moomRotationAnimation = [CABasicAnimation animationWithKeyPath:@"rotation"];
+    moomRotationAnimation.duration = 10.0;
+    moomRotationAnimation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI * 2)];
+    moomRotationAnimation.repeatCount = FLT_MAX;
+    [moomRotationNode addAnimation:moomRotationAnimation forKey:@"moom Revolution Animation"];
+    
+    //将月球公转节点添加到地月节点
+    [_earthAndMoonthNode addChildNode:moomRotationNode];
+    
+}
+
 
 //添加太阳自转动画
 - (void)addAnimationToSun {
